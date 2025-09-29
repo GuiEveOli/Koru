@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { logout } from '@/lib/firebase/auth';
 import { useAuth } from '@/context/AuthContext'; // Nosso hook
 import { useRouter } from 'next/navigation'; // Hook de navegação do Next.js
+import Link from 'next/link';
 
 export default function Home() {
   const { user } = useAuth(); // Pega o usuário do nosso "crachá global"
@@ -38,6 +39,9 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center p-24 gap-4">
       <h1>Bem-vindo ao seu Dashboard!</h1>
       <p>Seu e-mail é: {user.email}</p>
+      <Link href="/financeiro" className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+        Ir para Controle Financeiro
+      </Link>
       <button
         className="px-4 py-2 font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
         onClick={handleLogout}
