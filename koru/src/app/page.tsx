@@ -1,38 +1,50 @@
 // src/app/page.tsx
-
-// Adicione esta linha no topo! Isso transforma o componente em um Client Component.
-"use client"; 
-
-import { db } from '@/lib/firebase/config'; // Importe o db
-import { doc, setDoc } from "firebase/firestore"; // Importe funções do Firestore
+"use client";
+import { useEffect } from 'react';
+import { logout } from '@/lib/firebase/auth';
+import { useAuth } from '@/context/AuthContext'; // Nosso hook
+import { useRouter } from 'next/navigation'; // Hook de navegação do Next.js
 
 export default function Home() {
+  const { user } = useAuth(); // Pega o usuário do nosso "crachá global"
+  const router = useRouter();
 
-  const handleTestDb = async () => {
-    try {
-      // Cria uma referência para um documento que não existe ainda
-      const newDocRef = doc(db, "testCollection", "testDocument");
-      
-      // Tenta escrever um dado nesse documento
-      await setDoc(newDocRef, {
-        message: "Firebase connection is working!",
-        timestamp: new Date()
-      });
-      
-      alert("Sucesso! Um dado foi gravado no Firestore. Verifique o console do Firebase.");
-
-    } catch (error) {
-      console.error("Erro ao gravar no Firestore:", error);
-      alert("Ocorreu um erro. Verifique o console do navegador (F12).");
+  useEffect(() => {
+    // Este efeito será executado sempre que o 'user' mudar.
+    // A verificação inicial de loading já aconteceu no AuthProvider.
+    if (!user) {
+      // Se não houver usuário, redireciona para a página de login.
+      router.push('/login');
     }
+  }, [user, router]);
+
+  // Se o usuário existir, ele não será redirecionado e verá o conteúdo da página.
+  // Podemos até adicionar uma verificação para não mostrar nada antes do redirecionamento.
+  if (!user) {
+    return null; // Ou um spinner, ou uma mensagem de "redirecionando..."
+  }
+
+  // Conteúdo visível apenas para usuários logados
+  const handleLogout = async () => {
+    const { error } = await logout();
+    if (error) {
+      alert('Erro ao fazer logout.');
+      return;
+    }
+    router.push('/login');
   };
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24 gap-4">
-      <h1>Meu App de Produtividade</h1>
-      <button onClick={handleTestDb} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-        Testar Conexão com Banco de Dados
+      <h1>Bem-vindo ao seu Dashboard!</h1>
+      <p>Seu e-mail é: {user.email}</p>
+      <button
+        className="px-4 py-2 font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+        onClick={handleLogout}
+      >
+        Logout
       </button>
+      {/* Aqui você vai construir o dashboard principal do seu app */}
     </main>
   );
 }
