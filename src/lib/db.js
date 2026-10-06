@@ -67,25 +67,19 @@ function notifyUpdate() {
   window.dispatchEvent(new Event('db-updated'));
 }
 
-async function getOrCreateSupabaseUser() {
+async function getSupabaseUser() {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError) throw userError;
-  if (userData.user) return userData.user;
-
-  const { data: anonymousData, error: anonymousError } = await supabase.auth.signInAnonymously();
-  if (anonymousError) {
-    throw new Error(
-      `Não foi possível autenticar no Supabase. Ative o login anônimo ou configure autenticação: ${anonymousError.message}`,
-    );
+  if (!userData.user) {
+    throw new Error('Sessão do Supabase não encontrada.');
   }
-  return anonymousData.user;
+  return userData.user;
 }
 
 async function loadRemoteData(localData) {
   if (!isSupabaseConfigured || !supabase) return null;
 
-  const user = await getOrCreateSupabaseUser();
-  if (!user) throw new Error('O Supabase não retornou um usuário autenticado.');
+  const user = await getSupabaseUser();
   remoteUserId = user.id;
 
   const { data: record, error } = await supabase

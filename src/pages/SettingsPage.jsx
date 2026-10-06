@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabase';
 
 export default function SettingsPage() {
   const { data, updateSettings, setPin } = useFinance();
@@ -68,6 +69,14 @@ export default function SettingsPage() {
     toast({ title: 'PIN alterado com sucesso!' });
   };
 
+  const handleLogout = async () => {
+    if (!supabase) return;
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({ title: 'Não foi possível sair', description: error.message, variant: 'destructive' });
+    }
+  };
+
   const cardClass = `p-4 rounded-2xl ${isDark ? 'bg-white/5 border border-white/5' : 'bg-white border border-slate-100'}`;
 
   return (
@@ -83,6 +92,7 @@ export default function SettingsPage() {
               <p className="font-medium text-sm">Tema</p>
               <p className={`text-xs ${isDark ? 'text-white/40' : 'text-slate-400'}`}>{isDark ? 'Escuro' : 'Claro'}</p>
             </div>
+
           </div>
           <button onClick={toggleTheme}
             className={`w-14 h-8 rounded-full p-1 transition-colors ${isDark ? 'bg-emerald-500' : 'bg-slate-200'}`}
@@ -90,6 +100,12 @@ export default function SettingsPage() {
             <div className={`w-6 h-6 rounded-full bg-white transition-transform ${isDark ? 'translate-x-6' : 'translate-x-0'}`} />
           </button>
         </div>
+      </div>
+
+      <div className={cardClass}>
+        <Button onClick={handleLogout} variant="outline" className="w-full rounded-xl">
+          Sair da conta
+        </Button>
       </div>
 
       {/* Currency */}

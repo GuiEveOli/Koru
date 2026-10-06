@@ -20,18 +20,55 @@ import Statistics from '@/pages/Statistics';
 import Planning from '@/pages/Planning';
 import SettingsPage from '@/pages/SettingsPage';
 import Recurring from '@/pages/Recurring';
+import AuthScreen from '@/components/AuthScreen';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 const FinanceApp = () => {
+  const [authReady, setAuthReady] = useState(!isSupabaseConfigured);
+  const [user, setUser] = useState(isSupabaseConfigured ? null : { local: true });
   const [unlocked, setUnlocked] = useState(false);
   const [dbReady, setDbReady] = useState(false);
   const [existingPin, setExistingPin] = useState(null);
 
   useEffect(() => {
-    initDB().then(() => {
-      setExistingPin(getDB().pin);
-      setDbReady(true);
+    if (!supabase) return undefined;
+
+    let mounted = true;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (mounted) {
+        setUser(session?.user || null);
+        setAuthReady(true);
+      }
     });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) {
+        setUser(session?.user || null);
+        setAuthReady(true);
+      }
+    });
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    if (!authReady || !user) {
+      setDbReady(false);
+      setUnlocked(false);
+      return;
+    }
+
+    let mounted = true;
+    initDB().then(() => {
+      if (mounted) {
+        setExistingPin(getDB().pin);
+        setDbReady(true);
+      }
+    });
+    return () => { mounted = false; };
+  }, [authReady, user]);
 
   const handleUnlock = useCallback((newPin) => {
     if (newPin) {
@@ -70,6 +107,7 @@ const FinanceApp = () => {
   }, [unlocked]);
 
   if (!dbReady) {
+    if (authReady && !user) return <AuthScreen />;
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-slate-950">
         <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin" />
